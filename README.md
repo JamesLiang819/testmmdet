@@ -1,4 +1,4 @@
-<div align="center">
+<!-- <div align="center">
   <img src="resources/mmdet-logo.png" width="600"/>
 </div>
 
@@ -184,3 +184,4 @@ If you use this toolbox or benchmark in your research, please cite this project.
 - [MMOCR](https://github.com/open-mmlab/mmocr): A Comprehensive Toolbox for Text Detection, Recognition and Understanding.
 - [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab image and video generative models toolbox.
 # testmmdet
+ -->
