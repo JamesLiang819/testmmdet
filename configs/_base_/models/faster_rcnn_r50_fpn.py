@@ -37,8 +37,8 @@ model = dict(
         type='StandardRoIHead',
         bbox_roi_extractor=dict(
             type='SingleRoIExtractor',
-            # roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
-            roi_layer=dict(type='BorderAlign', pool_size=2),
+            roi_layer=dict(type='RoIAlign', output_size=7, sampling_ratio=0),
+            # roi_layer=dict(type='BorderAlign', pool_size=2),
             out_channels=256,
             featmap_strides=[4, 8, 16, 32]),
         bbox_head=dict(

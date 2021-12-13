@@ -22,11 +22,11 @@ pip install -v -e .
 
 
 cd mmcv
-python3 setup.py sdist bdist_wheel # bdist_wheel wheel / sdist tar.gz
+# python3 setup.py sdist bdist_wheel # bdist_wheel wheel / sdist tar.gz
 MMCV_WITH_OPS=1 python setup.py bdist_wheel
-pip install opencv-python
+# pip install opencv-python
 pip install dist/mmcv_full-1.3.16-cp37-cp37m-linux_x86_64.whl
-pip install dist/mmcv-1.3.16.tar.gz
+# pip install dist/mmcv-1.3.16.tar.gz
 # MMCV_WITH_OPS=1 pip install -e .
 pip install -r requirements/build.txt
 pip install -v -e .
@@ -42,13 +42,25 @@ python tests/test_ops/test_border_align.py
 
 python tools/train.py \
     configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py \
-    --gpu-ids 2 \
+    --gpu-ids 0 \
+    --work-dir logs
+
+bash tools/dist_train.sh \
+    configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py \
+    2 \
     --work-dir logs
 
 CUDA_VISIBLE_DEVICES=1,2 bash tools/dist_train.sh \
     configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py \
     2 \
     --work-dir logs
+
+CUDA_VISIBLE_DEVICES=1,3 bash tools/dist_train.sh \
+    configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py \
+    2 \
+    --work-dir logs/test \
+    --resume-from logs/test/epoch_1.pth
+    
 CUDA_VISIBLE_DEVICES=1,2 bash tools/dist_train.sh \
     configs/fcos/fcos_r50_caffe_fpn_gn-head_1x_coco.py \
     2 \
@@ -62,7 +74,7 @@ htc_r50_fpn_1x_coco
 CUDA_VISIBLE_DEVICES=3 python tools/test.py configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py logs/epoch_24.pth --eval bbox segm
 
 CUDA_VISIBLE_DEVICES=1,2 bash tools/dist_train.sh \
-    configs/detectors/detectors_htc_r50_1x_coco.py \
+    config/detectors/detectors_htc_r50_1x_coco_downsample1.py \
     2 \
     --work-dir logs
 
@@ -83,8 +95,20 @@ python tools/train.py \
 CUDA_VISIBLE_DEVICES=1,2,3 bash tools/dist_train.sh \
     config/detectors/detectors_htc_r50_1x_coco_fapn.py \
     3 \
-    --work-dir logs
+    --work-dir logs\
+
+CUDA_VISIBLE_DEVICES=1,2 bash tools/dist_train.sh \
+    config/detectors/detectors_htc_r101_cos_coco_fapn.py \
+    2 \
+    --work-dir logs/fapn_cos
+
+
 python tools/train.py \
     config/detectors/detectors_htc_r101_2x_coco.py \
     --gpu-ids 3 \
     --work-dir logs
+
+bash tools/dist_train.sh \
+    config/detectors/detectors_htc_r101_2x_coco_carafe.py \
+    2 \
+    --work-dir logs/carafe/r101/24e

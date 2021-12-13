@@ -118,15 +118,16 @@ data = dict(
                 ])
         ]))
 evaluation = dict(metric=['bbox', 'segm'])
-optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.03, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=None)
 lr_config = dict(
-    policy='step',
+    policy='CosineAnnealing',
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-    step=[8, 11])
-runner = dict(type='EpochBasedRunner', max_epochs=12)
+    min_lr_ratio=0.0001,
+    by_epoch=True)
+runner = dict(type='EpochBasedRunner', max_epochs=20)
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
 custom_hooks = [dict(type='NumClassCheckHook')]
@@ -139,20 +140,20 @@ model = dict(
     type='HybridTaskCascade',
     backbone=dict(
         type='DetectoRS_ResNet',
-        depth=50,
+        depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=True,
         style='pytorch',
-        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50'),
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet101'),
         conv_cfg=dict(type='ConvAWS'),
         sac=dict(type='SAC', use_deform=True),
         stage_with_sac=(False, True, True, True),
         output_img=True),
     neck=dict(
-        type='RFP',
+        type='RFP_FaPN',
         in_channels=[256, 512, 1024, 2048],
         out_channels=256,
         num_outs=5,
@@ -162,7 +163,7 @@ model = dict(
         rfp_backbone=dict(
             rfp_inplanes=256,
             type='DetectoRS_ResNet',
-            depth=50,
+            depth=101,
             num_stages=4,
             out_indices=(0, 1, 2, 3),
             frozen_stages=1,
@@ -171,7 +172,7 @@ model = dict(
             conv_cfg=dict(type='ConvAWS'),
             sac=dict(type='SAC', use_deform=True),
             stage_with_sac=(False, True, True, True),
-            pretrained='torchvision://resnet50',
+            pretrained='torchvision://resnet101',
             style='pytorch')),
     rpn_head=dict(
         type='RPNHead',
@@ -383,5 +384,5 @@ model = dict(
             nms=dict(type='nms', iou_threshold=0.5),
             max_per_img=100,
             mask_thr_binary=0.5)))
-work_dir = 'logs'
-gpu_ids = range(0, 1)
+work_dir = 'logs/fapn_cos'
+gpu_ids = range(0, 2)

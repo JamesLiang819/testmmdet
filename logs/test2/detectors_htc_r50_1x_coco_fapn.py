@@ -125,7 +125,7 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-    step=[8, 11])
+    step=[7, 11])
 runner = dict(type='EpochBasedRunner', max_epochs=12)
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
@@ -152,7 +152,7 @@ model = dict(
         stage_with_sac=(False, True, True, True),
         output_img=True),
     neck=dict(
-        type='RFP',
+        type='RFP_FaPN',
         in_channels=[256, 512, 1024, 2048],
         out_channels=256,
         num_outs=5,
@@ -383,5 +383,5 @@ model = dict(
             nms=dict(type='nms', iou_threshold=0.5),
             max_per_img=100,
             mask_thr_binary=0.5)))
-work_dir = 'logs'
-gpu_ids = range(0, 1)
+work_dir = 'logs/test2'
+gpu_ids = range(0, 2)

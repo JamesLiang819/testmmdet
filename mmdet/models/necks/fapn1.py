@@ -8,12 +8,11 @@ import torch
 from mmcv.cnn import ConvModule
 from mmcv.cnn import constant_init, xavier_init
 from mmcv.runner import BaseModule, auto_fp16
-from mmcv.ops.deform_conv import DeformConv2d
 
 from ..builder import NECKS
 
 # from __future__ import absolute_import, division, print_function
-# from .dcn_v2 import DCN as dcn_v2
+from .dcn_v2 import DCN as dcn_v2
 import math
 
 import torch
@@ -27,7 +26,7 @@ import os
 import numpy as np
 
 
-# import _ext as _backend
+import _ext as _backend
 
 
 class FeatureSelectionModule(nn.Module):
@@ -36,7 +35,7 @@ class FeatureSelectionModule(nn.Module):
         # self.conv_atten = nn.Conv2d(in_chan, in_chan, kernel_size=1, bias=False, norm=get_norm(norm, in_chan))
         self.conv_atten = nn.Conv2d(in_chan, in_chan, kernel_size=1, bias=False,).to('cuda')
         # self.groupnorm=nn.GroupNorm(2,256).to('cuda')
-        self.batchnorm=nn.BatchNorm2d(288).to('cuda')
+        self.batchnorm=nn.BatchNorm2d(256).to('cuda')
         # self.instancenorm=nn.InstanceNorm2d(256).to('cuda')
 
         self.sigmoid = nn.Sigmoid()
@@ -57,20 +56,18 @@ class FeatureSelectionModule(nn.Module):
 
 
 class FeatureAlign_V2(nn.Module):  # FaPN full version
-    def __init__(self, in_nc=288, out_nc=144, norm=None):
+    def __init__(self, in_nc=128, out_nc=128, norm=None):
         super(FeatureAlign_V2, self).__init__()
         self.lateral_conv = FeatureSelectionModule(in_nc, out_nc, norm="GB").to('cuda')
         # self.offset = nn.Conv2d(out_nc * 2, out_nc, kernel_size=1, stride=1, padding=0, bias=False, norm=norm)
         self.offset = nn.Conv2d(out_nc * 2, out_nc, kernel_size=1, stride=1, padding=0, bias=False,).to('cuda')
-        # self.dcpack_L2 = dcn_v2(out_nc, out_nc, 3, stride=1, padding=1, dilation=1, deformable_groups=8,
-        #                         extra_offset_mask=True).to('cuda')
-        self.dcpack_L2= DeformConv2d(out_nc, out_nc, kernel_size=3, stride=1, padding=1, dilation=1, deform_groups=16,).to('cuda')
+        self.dcpack_L2 = dcn_v2(out_nc, out_nc, 3, stride=1, padding=1, dilation=1, deformable_groups=8,
+                                extra_offset_mask=True).to('cuda')
         self.relu = nn.ReLU(inplace=True)
         # self.groupnorm=nn.GroupNorm(2,256).to('cuda')
-        self.batchnorm=nn.BatchNorm2d(288).to('cuda')
+        self.batchnorm=nn.BatchNorm2d(256).to('cuda')
         # self.instancenorm=nn.InstanceNorm2d(256).to('cuda')
         xavier_init(self.offset,distribution='uniform')
-        xavier_init(self.dcpack_L2,distribution='uniform')
 
     def forward(self, feat_l, feat_s, main_path=None):
         HW = feat_l.size()[2:]
@@ -80,9 +77,7 @@ class FeatureAlign_V2(nn.Module):  # FaPN full version
             feat_up = feat_s.to('cuda')
         feat_arm = self.lateral_conv(feat_l).to('cuda')  # 0~1 * feats
         offset = self.batchnorm(self.offset(torch.cat([feat_arm, feat_up * 2], dim=1).to('cuda')))  # concat for offset by compute the dif
-        # feat_align = self.relu(self.dcpack_L2([feat_up, offset], main_path))  # [feat, offset]
-        # print(feat_up.size(),self.dcpack_L2.weight.size())
-        feat_align = self.relu(self.dcpack_L2(feat_up, offset))  # [feat, offset]
+        feat_align = self.relu(self.dcpack_L2([feat_up, offset], main_path))  # [feat, offset]
         return feat_align + feat_arm
 
 @NECKS.register_module()
@@ -184,11 +179,11 @@ class FaPN(BaseModule):
         self.lateral_convs = nn.ModuleList()
         self.l_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
-        self.fapn=FeatureAlign_V2(288,288)
+        self.fapn=FeatureAlign_V2(256,256)
         for i in range(self.start_level, self.backbone_end_level):
             l_conv = ConvModule(
                 in_channels[i],
-                288,
+                out_channels,
                 1,
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg if not self.no_norm_on_lateral else None,
@@ -203,7 +198,7 @@ class FaPN(BaseModule):
                 act_cfg=act_cfg,
                 inplace=False)
             fpn_conv = ConvModule(
-                288,
+                out_channels,
                 out_channels,
                 3,
                 padding=1,

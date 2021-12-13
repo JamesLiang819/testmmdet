@@ -17,11 +17,15 @@ from .yolox_pafpn import YOLOXPAFPN
 from .fapn import FaPN
 from .rfp_carafe import RFP_CARAFE
 from .rfp_fapn import RFP_FaPN
+from .rfp_downsample1 import RFP_DOWNSAMPLE1
+from .rfp_downsample2 import RFP_DOWNSAMPLE2
+from .rfp_downsample3 import RFP_DOWNSAMPLE3
 
 __all__ = [
     'FPN', 'BFP', 'ChannelMapper', 'HRFPN', 'NASFPN', 'FPN_CARAFE', 'PAFPN',
     'NASFCOS_FPN', 'RFP', 'YOLOV3Neck', 'FPG', 'DilatedEncoder',
-    'CTResNetNeck', 'SSDNeck', 'YOLOXPAFPN','FaPN','RFP_CARAFE','RFP_FaPN'
+    'CTResNetNeck', 'SSDNeck', 'YOLOXPAFPN','FaPN','RFP_CARAFE','RFP_FaPN','RFP_DOWNSAMPLE1',
+    'RFP_DOWNSAMPLE2','RFP_DOWNSAMPLE3',
 ]
 # __all__ = [
 #     'FPN', 'BFP', 'ChannelMapper', 'HRFPN', 'NASFPN', 'FPN_CARAFE', 'PAFPN',

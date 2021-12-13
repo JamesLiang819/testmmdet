@@ -13,6 +13,7 @@ from .fpg import FPG
 from .nasfcos_fpn import NASFCOS_FPN
 from .bfp import BFP
 from .hrfpn import HRFPN
+from mmcv.cnn import ConvModule
 
 
 class ASPP(BaseModule):
@@ -65,7 +66,7 @@ class ASPP(BaseModule):
 
 
 @NECKS.register_module()
-class RFP(FPN):
+class RFP_DOWNSAMPLE3(FPN):
     """RFP (Recursive Feature Pyramid)
 
     This is an implementation of RFP in `DetectoRS
@@ -97,6 +98,22 @@ class RFP(FPN):
         # Be careful! Pretrained weights cannot be loaded when use
         # nn.ModuleList
         self.rfp_modules = ModuleList()
+        self.spatial_lateral=ModuleList()
+        self.channel_lateral=ModuleList()
+        self.lateral=ModuleList()
+        for i in range(5):
+            l_conv = ConvModule(
+                256,
+                256,
+                1,
+                conv_cfg=dict(type='ConvAWS'),
+                norm_cfg=dict(type='BN'),
+                act_cfg=dict(type='Swish'),
+                inplace=False)
+            self.spatial_lateral.append(l_conv)
+            self.channel_lateral.append(l_conv)
+            self.lateral.append(l_conv)
+        
         for rfp_idx in range(1, rfp_steps):
             rfp_module = build_backbone(rfp_backbone)
             self.rfp_modules.append(rfp_module)
@@ -128,6 +145,29 @@ class RFP(FPN):
         img = inputs.pop(0)
         # FPN forward
         x = super().forward(tuple(inputs))
+        ####################################################
+        #Downsample1(fusion)
+
+        x=list(x)
+        spatial_feature=[]
+        spatial_softmax=[]
+        channel_feature=[]
+        channel_softmax=[]
+
+        # Spatial
+        for i in range(len(x)):
+            spatial_softmax.append(F.softmax(x[i]))
+            spatial_feature.append(self.spatial_lateral[i](spatial_softmax[i]*x[i]))
+
+        # Channel 
+        for i in range(len(x)):
+            channel_softmax.append(F.adaptive_avg_pool2d(x[i], (1, 1)))
+            channel_feature.append(self.channel_lateral[i](channel_softmax[i]*x[i]))
+
+        for i in range(len(x)):
+            x[i]=self.lateral[i](spatial_feature[i]+channel_feature[i])
+
+        ####################################################
         # print(x[0].size(),x[1].size(),x[2].size(),x[3].size(),x[4].size())
         for rfp_idx in range(self.rfp_steps - 1):
             rfp_feats = [x[0]] + list(
