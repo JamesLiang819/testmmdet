@@ -157,12 +157,12 @@ class RFP_DOWNSAMPLE1(FPN):
         # Spatial
         for i in range(len(x)):
             spatial_softmax.append(F.softmax(x[i]))
-            spatial_feature.append(self.spatial_lateral[i](spatial_softmax[i]*x[i]))
+            spatial_feature.append(self.spatial_lateral[i](spatial_softmax[i]*x[i])+x[i])
 
         # Channel 
         for i in range(len(x)):
             channel_softmax.append(F.adaptive_avg_pool2d(x[i], (1, 1)))
-            channel_feature.append(self.channel_lateral[i](channel_softmax[i]*x[i]))
+            channel_feature.append(self.channel_lateral[i](channel_softmax[i]*x[i])+x[i])
 
         for i in range(len(x)):
             x[i]=self.lateral[i](spatial_feature[i]+channel_feature[i]+x[i])

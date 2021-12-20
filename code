@@ -13,7 +13,6 @@ pip install torch==1.10.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.10.0+cu1
 pip install openmim
 mim install mmdet
 pip install -v -e .
-pip install -e .
 
 pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10.0/index.html
 pip install mmdet

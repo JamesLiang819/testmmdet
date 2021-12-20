@@ -241,6 +241,8 @@ class BaseDetector(BaseModule, metaclass=ABCMeta):
         outputs = dict(
             loss=loss, log_vars=log_vars, num_samples=len(data['img_metas']))
 
+        
+
         return outputs
 
     def val_step(self, data, optimizer=None):
