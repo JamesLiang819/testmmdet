@@ -19,6 +19,8 @@ from mmdet.datasets import (build_dataloader, build_dataset,
 from mmdet.models import build_detector
 
 
+import tensorboard
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
