@@ -40,6 +40,7 @@ test_pipeline = [
         type='MultiScaleFlipAug',
         # img_scale=(1333, 800),
         img_scale=[(1200, 800),(1500,1000),(1800,1200),(2100,1400),(2400,1600)],
+        multiscale_mode='value',
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
