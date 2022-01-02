@@ -6,7 +6,11 @@ train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='LoadAnnotations', with_bbox=True, with_mask=True, with_seg=True),
-    dict(type='Resize', img_scale=(1333, 800), keep_ratio=True),
+    dict(
+        type='Resize',
+        img_scale=[(1333, 1200), (1333, 400)],
+        multiscale_mode='range',
+        keep_ratio=True),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(
         type='Normalize',
@@ -24,7 +28,8 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1333, 800),
+        img_scale=[(1200, 800), (1333, 800), (1500, 1000), (1800, 1200),
+                   (2100, 1400), (2400, 1600)],
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -53,7 +58,11 @@ data = dict(
                 with_bbox=True,
                 with_mask=True,
                 with_seg=True),
-            dict(type='Resize', img_scale=(1333, 800), keep_ratio=True),
+            dict(
+                type='Resize',
+                img_scale=[(1333, 1200), (1333, 400)],
+                multiscale_mode='range',
+                keep_ratio=True),
             dict(type='RandomFlip', flip_ratio=0.5),
             dict(
                 type='Normalize',
@@ -79,7 +88,8 @@ data = dict(
             dict(type='LoadImageFromFile'),
             dict(
                 type='MultiScaleFlipAug',
-                img_scale=(1333, 800),
+                img_scale=[(1200, 800), (1333, 800), (1500, 1000),
+                           (1800, 1200), (2100, 1400), (2400, 1600)],
                 flip=False,
                 transforms=[
                     dict(type='Resize', keep_ratio=True),
@@ -102,7 +112,8 @@ data = dict(
             dict(type='LoadImageFromFile'),
             dict(
                 type='MultiScaleFlipAug',
-                img_scale=(1333, 800),
+                img_scale=[(1200, 800), (1333, 800), (1500, 1000),
+                           (1800, 1200), (2100, 1400), (2400, 1600)],
                 flip=False,
                 transforms=[
                     dict(type='Resize', keep_ratio=True),
@@ -125,10 +136,13 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-    step=[7, 11])
+    step=[7, 10])
 runner = dict(type='EpochBasedRunner', max_epochs=12)
 checkpoint_config = dict(interval=1)
-log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
+log_config = dict(
+    interval=50,
+    hooks=[dict(type='TextLoggerHook'),
+           dict(type='TensorboardLoggerHook')])
 custom_hooks = [dict(type='NumClassCheckHook')]
 dist_params = dict(backend='nccl')
 log_level = 'INFO'

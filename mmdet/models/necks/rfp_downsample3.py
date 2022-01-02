@@ -101,6 +101,7 @@ class RFP_DOWNSAMPLE3(FPN):
         self.spatial_lateral=ModuleList()
         self.channel_lateral=ModuleList()
         self.lateral=ModuleList()
+        self.down=ModuleList()
         for i in range(5):
             l_conv = ConvModule(
                 256,
@@ -110,9 +111,32 @@ class RFP_DOWNSAMPLE3(FPN):
                 norm_cfg=dict(type='BN'),
                 act_cfg=dict(type='Swish'),
                 inplace=False)
-            self.spatial_lateral.append(l_conv)
-            self.channel_lateral.append(l_conv)
+            sp_conv = ConvModule(
+                256,
+                256,
+                3,
+                1,
+                1,
+                conv_cfg=dict(type='ConvAWS'),
+                norm_cfg=dict(type='BN'),
+                act_cfg=dict(type='Swish'),
+                inplace=False)
+            # self.spatial_lateral.append(sp_conv)
+            # self.lateral.append(l_conv)
+        for i in range(4):
+            down_conv = ConvModule(
+                256,
+                256,
+                4,
+                stride=2,
+                padding=1,
+                conv_cfg=dict(type='ConvAWS'),
+                norm_cfg=dict(type='BN'),
+                act_cfg=dict(type='Swish'),
+                inplace=False)
+            self.spatial_lateral.append(sp_conv)
             self.lateral.append(l_conv)
+            self.down.append(down_conv)
         
         for rfp_idx in range(1, rfp_steps):
             rfp_module = build_backbone(rfp_backbone)
@@ -148,24 +172,10 @@ class RFP_DOWNSAMPLE3(FPN):
         ####################################################
         #Downsample1(fusion)
 
-        x=list(x)
-        spatial_feature=[]
-        spatial_softmax=[]
-        channel_feature=[]
-        channel_softmax=[]
+        # x=list(x)
 
-        # Spatial
-        for i in range(len(x)):
-            spatial_softmax.append(F.softmax(x[i]))
-            spatial_feature.append(self.spatial_lateral[i](spatial_softmax[i]*x[i])+x[i])
-
-        # Channel 
-        for i in range(len(x)):
-            channel_softmax.append(F.adaptive_avg_pool2d(x[i], (1, 1)))
-            channel_feature.append(self.channel_lateral[i](channel_softmax[i]*x[i])+x[i])
-
-        for i in range(len(x)):
-            x[i]=self.lateral[i](spatial_feature[i]+channel_feature[i])
+        # for i in range(len(x)):
+        #     x[i]=self.lateral[i](self.spatial_lateral[i](x[i])*x[i]+x[i])
 
         ####################################################
         # print(x[0].size(),x[1].size(),x[2].size(),x[3].size(),x[4].size())
@@ -175,10 +185,15 @@ class RFP_DOWNSAMPLE3(FPN):
             x_idx = self.rfp_modules[rfp_idx].rfp_forward(img, rfp_feats)
             # FPN forward
             x_idx = super().forward(x_idx)
+            for i in range(len(x)-1):
+                print(x_idx[i+1].size(),self.down[i](x_idx[i]).size())
+            for i in range(len(x)-1):
+                x_idx[i+1]=self.lateral[i](self.spatial_lateral[i](x_idx[i+1])*x_idx[i+1]+self.down[i](x_idx[i]))
             x_new = []
             for ft_idx in range(len(x_idx)):
                 add_weight = torch.sigmoid(self.rfp_weight(x_idx[ft_idx]))
                 x_new.append(add_weight * x_idx[ft_idx] +
                              (1 - add_weight) * x[ft_idx])
             x = x_new
+
         return x

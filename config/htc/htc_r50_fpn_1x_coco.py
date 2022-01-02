@@ -39,11 +39,11 @@ test_pipeline = [
     dict(
         type='MultiScaleFlipAug',
         # img_scale=(1333, 800),
-        img_scale=[(1200, 800),(1500,1000),(1800,1200),(2100,1400),(2400,1600)],
-        multiscale_mode='value',
+        img_scale=[(900,600),(1200,800),(1500,1000),(1800,1200),(2100,1400),(2400,1600)],
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
+            # dict(type='Resize',img_scale=[(1333, 800),(1500,1000),(1800,1200),(2100,1400),(2400,1600)], multiscale_mode='value',keep_ratio=True),
             dict(type='RandomFlip', flip_ratio=0.5),
             dict(type='Normalize', **img_norm_cfg),
             dict(type='Pad', size_divisor=32),
